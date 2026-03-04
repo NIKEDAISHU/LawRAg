@@ -120,6 +120,7 @@ Dify 是一个优秀的开源 LLM 应用平台，但针对**执法案件审查**
 - Go 1.25+
 - PostgreSQL 14+
 - pgvector 扩展
+- zhparser 扩展（可选，用于中文全文检索）
 
 ## 快速开始
 
@@ -176,6 +177,35 @@ sudo apt install postgresql-15-pgvector
 
 # macOS
 brew install pgvector
+```
+
+### 3.1 安装 zhparser 扩展（可选）
+
+用于中文全文检索。如果使用默认的 pgvector 向量搜索，可以跳过此步骤。
+
+**Docker 环境:**
+```bash
+docker exec -it <container> bash
+# 在容器内执行以下命令
+apt-get update
+apt-get install -y postgresql-server-dev-all build-essential git wget
+wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
+cd scws-1.2.3
+./configure --prefix=/usr/local
+make && make install
+echo "/usr/local/lib" > /etc/ld.so.conf.d/scws.conf
+ldconfig
+cd /tmp
+git clone https://github.com/amutu/zhparser.git
+cd zhparser
+SCWS_HOME=/usr/local make && make install
+```
+
+**启用扩展:**
+```sql
+CREATE EXTENSION zhparser;
+CREATE TEXT SEARCH CONFIGURATION chinese_zh (PARSER = zhparser);
+ALTER TEXT SEARCH CONFIGURATION chinese_zh ADD MAPPING FOR n,v,a,i,e,l WITH simple;
 ```
 
 ### 4. 创建数据库
