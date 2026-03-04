@@ -1,0 +1,524 @@
+/* ========================================
+   Claude Style - 知性简约设计系统
+   适合法律执法 RAG 系统
+   ======================================== */
+
+/* ==================== CSS 变量 ==================== */
+:root {
+    /* 核心配色 */
+    --claude-bg-primary: #FAF9F5;      /* 暖白色背景 - Pampas */
+    --claude-bg-secondary: #F4F3EE;    /* 次级背景 */
+    --claude-bg-card: #FFFFFF;         /* 卡片背景 */
+
+    --claude-accent: #D97757;
+    --claude-accent-dark: #B85C3F;          /* 主强调色 - Crail 橘色 */
+    --claude-accent-hover: #C15F3C;    /* 悬停橘色 */
+    --claude-accent-light: #F5E6E0;    /* 浅橘色背景 */
+
+    --claude-text-primary: #141413;    /* 主文字 - 深炭灰 */
+    --claude-text-secondary: #5A5A5A;  /* 次要文字 */
+    --claude-text-tertiary: #9CA3AF;   /* 三级文字 */
+
+    /* 辅助色 - 莫兰迪色系 */
+    --claude-purple: #A78BFA;
+    --claude-purple-light: #EDE9FE;
+    --claude-green: #34D399;
+    --claude-green-light: #D1FAE5;
+    --claude-blue: #60A5FA;
+    --claude-blue-light: #DBEAFE;
+    --claude-yellow: #FBBF24;
+    --claude-yellow-light: #FEF3C7;
+
+    /* 功能色 */
+    --claude-success: #34D399;
+    --claude-success-light: #D1FAE5;
+    --claude-warning: #FBBF24;
+    --claude-error: #F87171;
+    --claude-danger: #EF4444;
+    --claude-danger-light: #FEE2E2;
+    --claude-info: #60A5FA;
+
+    /* 边框和阴影 */
+    --claude-border: #E5E5E5;
+    --claude-border-hover: #D4D4D4;
+    --claude-shadow-sm: 0 1px 2px rgba(20, 20, 19, 0.05);
+    --claude-shadow-md: 0 4px 12px rgba(20, 20, 19, 0.08);
+    --claude-shadow-lg: 0 8px 24px rgba(20, 20, 19, 0.12);
+
+    /* 圆角 */
+    --claude-radius-sm: 8px;
+    --claude-radius-md: 12px;
+    --claude-radius-lg: 16px;
+    --claude-radius-xl: 20px;
+
+    /* 字体 */
+    --claude-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --claude-font-serif: 'Lora', 'Georgia', 'Times New Roman', serif;
+    --claude-font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* ==================== 全局样式 ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--claude-font-sans);
+    background: var(--claude-bg-primary);
+    color: var(--claude-text-primary);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== 排版系统 ==================== */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--claude-font-sans);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--claude-text-primary);
+    letter-spacing: -0.02em;
+}
+
+h1 { font-size: 32px; margin-bottom: 16px; }
+h2 { font-size: 26px; margin-bottom: 14px; }
+h3 { font-size: 22px; margin-bottom: 12px; }
+h4 { font-size: 18px; margin-bottom: 10px; }
+h5 { font-size: 16px; margin-bottom: 8px; }
+h6 { font-size: 14px; margin-bottom: 8px; }
+
+p {
+    font-family: var(--claude-font-serif);
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--claude-text-secondary);
+    margin-bottom: 16px;
+}
+
+/* ==================== 按钮系统 ==================== */
+.claude-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-family: var(--claude-font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--claude-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--claude-shadow-sm);
+}
+
+.claude-btn-primary {
+    background: var(--claude-accent);
+    color: white;
+}
+
+.claude-btn-primary:hover {
+    background: var(--claude-accent-hover);
+    box-shadow: var(--claude-shadow-md);
+    transform: translateY(-1px);
+}
+
+.claude-btn-secondary {
+    background: var(--claude-bg-card);
+    color: var(--claude-text-primary);
+    border: 1px solid var(--claude-border);
+}
+
+.claude-btn-secondary:hover {
+    background: var(--claude-bg-secondary);
+    border-color: var(--claude-border-hover);
+}
+
+.claude-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================== 卡片系统 ==================== */
+.claude-card {
+    background: var(--claude-bg-card);
+    border: 1px solid var(--claude-border);
+    border-radius: var(--claude-radius-lg);
+    padding: 24px;
+    box-shadow: var(--claude-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.claude-card:hover {
+    box-shadow: var(--claude-shadow-md);
+    border-color: var(--claude-border-hover);
+}
+
+/* ==================== 输入框 ==================== */
+.claude-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--claude-font-sans);
+    font-size: 15px;
+    color: var(--claude-text-primary);
+    background: var(--claude-bg-card);
+    border: 1px solid var(--claude-border);
+    border-radius: var(--claude-radius-md);
+    transition: all 0.2s ease;
+}
+
+.claude-input:focus {
+    outline: none;
+    border-color: var(--claude-accent);
+    box-shadow: 0 0 0 3px var(--claude-accent-light);
+}
+
+.claude-input::placeholder {
+    color: var(--claude-text-tertiary);
+}
+
+/* ==================== 文本区域 ==================== */
+.claude-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px 16px;
+    font-family: var(--claude-font-sans);
+    font-size: 15px;
+    color: var(--claude-text-primary);
+    background: var(--claude-bg-card);
+    border: 1px solid var(--claude-border);
+    border-radius: var(--claude-radius-md);
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.claude-textarea:focus {
+    outline: none;
+    border-color: var(--claude-accent);
+    box-shadow: 0 0 0 3px var(--claude-accent-light);
+}
+
+/* ==================== 选择框 ==================== */
+.claude-select {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--claude-font-sans);
+    font-size: 15px;
+    color: var(--claude-text-primary);
+    background: var(--claude-bg-card);
+    border: 1px solid var(--claude-border);
+    border-radius: var(--claude-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%235A5A5A' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.claude-select:focus {
+    outline: none;
+    border-color: var(--claude-accent);
+    box-shadow: 0 0 0 3px var(--claude-accent-light);
+}
+
+/* ==================== 复选框 ==================== */
+.claude-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--claude-text-secondary);
+}
+
+.claude-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--claude-accent);
+    cursor: pointer;
+}
+
+/* ==================== 标签 ==================== */
+.claude-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--claude-radius-sm);
+    gap: 4px;
+}
+
+.claude-badge-accent {
+    background: var(--claude-accent-light);
+    color: var(--claude-accent);
+}
+
+.claude-badge-purple {
+    background: var(--claude-purple-light);
+    color: var(--claude-purple);
+}
+
+.claude-badge-green {
+    background: var(--claude-green-light);
+    color: var(--claude-green);
+}
+
+.claude-badge-blue {
+    background: var(--claude-blue-light);
+    color: var(--claude-blue);
+}
+
+/* ==================== 导航 ==================== */
+.claude-nav {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    background: var(--claude-bg-card);
+    border: 1px solid var(--claude-border);
+    border-radius: var(--claude-radius-lg);
+    margin-bottom: 24px;
+}
+
+.claude-nav-item {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--claude-text-secondary);
+    text-decoration: none;
+    border-radius: var(--claude-radius-md);
+    transition: all 0.2s ease;
+}
+
+.claude-nav-item:hover {
+    background: var(--claude-bg-secondary);
+    color: var(--claude-text-primary);
+}
+
+.claude-nav-item.active {
+    background: var(--claude-accent);
+    color: white;
+}
+
+/* ==================== 加载动画 ==================== */
+.claude-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--claude-accent-light);
+    border-radius: var(--claude-radius-md);
+    color: var(--claude-accent);
+    font-size: 14px;
+}
+
+.claude-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--claude-accent-light);
+    border-top-color: var(--claude-accent);
+    border-radius: 50%;
+    animation: claude-spin 1s linear infinite;
+}
+
+@keyframes claude-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ==================== 空状态 ==================== */
+.claude-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--claude-text-tertiary);
+}
+
+.claude-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.claude-empty-text {
+    font-family: var(--claude-font-serif);
+    font-size: 15px;
+    color: var(--claude-text-secondary);
+}
+
+/* ==================== 表格 ==================== */
+.claude-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.claude-table th,
+.claude-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--claude-border);
+}
+
+.claude-table th {
+    font-family: var(--claude-font-sans);
+    font-weight: 600;
+    color: var(--claude-text-primary);
+    background: var(--claude-bg-secondary);
+}
+
+.claude-table tr:hover {
+    background: var(--claude-bg-secondary);
+}
+
+.claude-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 768px) {
+    h1 { font-size: 26px; }
+    h2 { font-size: 22px; }
+    h3 { font-size: 18px; }
+
+    .claude-card {
+        padding: 16px;
+    }
+
+    .claude-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+/* ==================== 工具类 ==================== */
+.claude-text-serif {
+    font-family: var(--claude-font-serif);
+}
+
+.claude-text-accent {
+    color: var(--claude-accent);
+}
+
+.claude-mb-8 { margin-bottom: 8px; }
+.claude-mb-16 { margin-bottom: 16px; }
+.claude-mb-24 { margin-bottom: 24px; }
+.claude-mt-8 { margin-top: 8px; }
+.claude-mt-16 { margin-top: 16px; }
+.claude-mt-24 { margin-top: 24px; }
+
+.claude-flex {
+    display: flex;
+}
+
+.claude-flex-col {
+    flex-direction: column;
+}
+
+.claude-items-center {
+    align-items: center;
+}
+
+.claude-justify-between {
+    justify-content: space-between;
+}
+
+.claude-gap-8 {
+    gap: 8px;
+}
+
+.claude-gap-16 {
+    gap: 16px;
+}
+
+/* ==================== 字体引入 ==================== */
+/* 从 Google Fonts 引入 Lora 衬线字体 */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ==================== 布局容器 ==================== */
+.claude-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+}
+
+.claude-page-header {
+    margin-bottom: 48px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.claude-title {
+    font-family: var(--claude-font-serif);
+    font-size: 38px;
+    font-weight: 700;
+    color: var(--claude-text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+
+.claude-subtitle {
+    font-family: var(--claude-font-serif);
+    font-size: 16px;
+    color: var(--claude-text-secondary);
+    font-weight: 400;
+}
+
+.claude-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: var(--claude-accent);
+    color: white;
+    border: none;
+    border-radius: var(--claude-radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--claude-shadow-sm);
+}
+
+.claude-button:hover {
+    background: var(--claude-accent-hover);
+    box-shadow: var(--claude-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+    .claude-container {
+        padding: 24px 16px;
+    }
+    
+    .claude-title {
+        font-size: 28px;
+    }
+    
+    .claude-subtitle {
+        font-size: 14px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .claude-nav {
+        flex-wrap: wrap;
+    }
+}

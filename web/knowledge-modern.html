@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法律知识库 - Law Enforcement Brain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/claude-style.css">
+    <style>
+        .project-selector {
+            width: 280px;
+            height: 44px;
+            padding: 0 16px;
+            border: 1px solid var(--claude-border);
+            background: var(--claude-bg-card);
+            color: var(--claude-text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: var(--claude-radius-md);
+        }
+
+        .project-selector:focus {
+            outline: none;
+            border-color: var(--claude-accent);
+            box-shadow: 0 0 0 3px var(--claude-accent-light);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            padding: 28px;
+            border-radius: var(--claude-radius-lg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--claude-accent);
+            transform: translateY(-2px);
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--claude-accent-light);
+            color: var(--claude-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .stat-value {
+            font-family: var(--claude-font-serif);
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--claude-text-secondary);
+            font-weight: 500;
+        }
+
+        .search-section {
+            margin-bottom: 32px;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 640px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 52px;
+            padding: 0 56px;
+            border: 1px solid var(--claude-border);
+            background: var(--claude-bg-card);
+            border-radius: var(--claude-radius-lg);
+            font-size: 15px;
+            font-family: var(--claude-font-sans);
+            color: var(--claude-text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--claude-accent);
+            box-shadow: 0 0 0 4px var(--claude-accent-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--claude-text-tertiary);
+            font-size: 20px;
+        }
+
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+        }
+
+        .doc-card {
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            padding: 24px;
+            border-radius: var(--claude-radius-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--doc-accent, var(--claude-accent));
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .doc-card:hover {
+            border-color: var(--claude-accent);
+            transform: translateY(-3px);
+            box-shadow: var(--claude-shadow-md);
+        }
+
+        .doc-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .doc-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .doc-title {
+            font-family: var(--claude-font-serif);
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--claude-text-primary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            background: var(--claude-accent-light);
+            color: var(--claude-accent-dark);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .detail-view {
+            display: none;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--claude-border);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            border-radius: var(--claude-radius-md);
+            color: var(--claude-text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--claude-accent-light);
+            border-color: var(--claude-accent);
+            color: var(--claude-accent-dark);
+        }
+
+        .detail-title {
+            flex: 1;
+            font-family: var(--claude-font-serif);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .articles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .article-card {
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            padding: 24px;
+            border-radius: var(--claude-radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .article-card:hover {
+            border-color: var(--claude-accent);
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .article-number {
+            display: inline-flex;
+            padding: 6px 16px;
+            background: var(--claude-accent-light);
+            color: var(--claude-accent-dark);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .article-content {
+            font-family: var(--claude-font-serif);
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--claude-text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-card.expanded .article-content {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--claude-border);
+            border-top-color: var(--claude-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            border-radius: var(--claude-radius-xl);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-family: var(--claude-font-serif);
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--claude-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            font-size: 15px;
+            color: var(--claude-text-secondary);
+        }
+
+        /* 不同文档的强调色 */
+        .accent-warm { --doc-accent: #D97757; }
+        .accent-blue { --doc-accent: #3B82F6; }
+        .accent-purple { --doc-accent: #8B5CF6; }
+        .accent-green { --doc-accent: #10B981; }
+        .accent-amber { --doc-accent: #F59E0B; }
+        .accent-rose { --doc-accent: #EC4899; }
+        .accent-cyan { --doc-accent: #06B6D4; }
+    
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .claude-page-header {
+            margin-bottom: 48px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .header-text {
+            flex: 1;
+        }
+
+        .claude-title {
+            font-family: var(--claude-font-serif);
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .claude-subtitle {
+            font-family: var(--claude-font-serif);
+            font-size: 16px;
+            color: var(--claude-text-secondary);
+            font-weight: 400;
+        }
+
+        .claude-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            background: var(--claude-accent);
+            color: white;
+            border: none;
+            border-radius: var(--claude-radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .claude-button:hover {
+            background: var(--claude-accent-hover);
+            box-shadow: var(--claude-shadow-md);
+            transform: translateY(-1px);
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+</style>
+</head>
+<body>
+    <div class="container">        <!-- Claude 风格导航 -->
+        <nav class="claude-nav">
+            <a href="/web/index.html" class="claude-nav-item ">
+                <span>🏠</span>
+                <span>主页</span>
+            </a>
+            <a href="/web/knowledge-modern.html" class="claude-nav-item active">
+                <span>📚</span>
+                <span>知识库</span>
+            </a>
+            <a href="/web/projects.html" class="claude-nav-item ">
+                <span>⚙️</span>
+                <span>项目管理</span>
+            </a>
+            <a href="/web/chat.html" class="claude-nav-item ">
+                <span>💬</span>
+                <span>LLM 对话</span>
+            </a>
+        </nav>
+
+        <!-- 页面头部 -->
+        <header class="claude-page-header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="claude-title">法律知识库</h1>
+                    <p class="claude-subtitle">浏览和检索已导入的法律文档</p>
+                </div>
+                <select id="projectSelector" class="project-selector">
+                    <option value="1">卫生执法案卷评审</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- 统计卡片 -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-value" id="totalDocs">0</div>
+                <div class="stat-label">法律文档</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📜</div>
+                <div class="stat-value" id="totalArticles">0</div>
+                <div class="stat-label">法律条文</div>
+            </div>
+        </div>
+
+        <!-- 搜索 -->
+        <div class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索法律文档...">
+            </div>
+        </div>
+
+        <!-- 文档列表视图 -->
+        <div id="listView">
+            <div class="documents-grid" id="documentsGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p style="color: var(--claude-text-secondary);">加载中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 条文详情视图 -->
+        <div id="detailView" class="detail-view">
+            <div class="detail-header">
+                <button class="back-button" onclick="showListView()">
+                    ← 返回
+                </button>
+                <div class="detail-title" id="detailTitle"></div>
+            </div>
+            <div class="articles-list" id="articlesList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let allDocuments = [];
+        let currentDoc = null;
+        let currentProjectId = 1;
+        let allProjects = [];
+
+        const accents = ['accent-warm', 'accent-blue', 'accent-purple', 'accent-green', 'accent-amber', 'accent-rose', 'accent-cyan'];
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/projects`);
+                const data = await response.json();
+
+                if (data.success && data.data.projects) {
+                    allProjects = data.data.projects;
+                    const activeProjects = allProjects.filter(p => p.is_active);
+
+                    if (activeProjects.length === 0) {
+                        console.error('No active projects found');
+                        return;
+                    }
+
+                    const selector = document.getElementById('projectSelector');
+                    selector.innerHTML = activeProjects
+                        .map(p => `<option value="${p.id}">${p.project_name}</option>`)
+                        .join('');
+
+                    currentProjectId = activeProjects[0].id;
+                    selector.value = currentProjectId;
+
+                    selector.addEventListener('change', (e) => {
+                        currentProjectId = parseInt(e.target.value);
+                        loadDocuments();
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/documents?project_id=${currentProjectId}`);
+                const data = await response.json();
+
+                if (data.success && data.data.documents) {
+                    allDocuments = data.data.documents;
+                    displayDocuments(allDocuments);
+                    updateStats();
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+                showError();
+            }
+        }
+
+        function displayDocuments(documents) {
+            const grid = document.getElementById('documentsGrid');
+
+            if (documents.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            grid.innerHTML = documents.map((doc, index) => `
+                <div class="doc-card ${accents[index % accents.length]}" onclick="loadArticles('${doc.doc_name}')">
+                    <div class="doc-icon">📄</div>
+                    <div class="doc-title">${doc.doc_name}</div>
+                    <div class="doc-badge">${doc.article_count} 条文</div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalDocs = allDocuments.length;
+            const totalArticles = allDocuments.reduce((sum, doc) => sum + doc.article_count, 0);
+
+            animateValue('totalDocs', 0, totalDocs, 1000);
+            animateValue('totalArticles', 0, totalArticles, 1000);
+        }
+
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= end) {
+                    element.textContent = end;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+
+        async function loadArticles(docName) {
+            currentDoc = docName;
+            document.getElementById('detailTitle').textContent = docName;
+            document.getElementById('listView').style.display = 'none';
+            document.getElementById('detailView').style.display = 'block';
+
+            const articlesList = document.getElementById('articlesList');
+            articlesList.innerHTML = '<div class="loading-state"><div class="spinner"></div><p style="color: var(--claude-text-secondary);">加载中...</p></div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/documents/${encodeURIComponent(docName)}/articles?project_id=${currentProjectId}`);
+                const data = await response.json();
+
+                if (data.success && data.data.articles) {
+                    displayArticles(data.data.articles);
+                } else {
+                    articlesList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📄</div>
+                            <div class="empty-title">暂无条文</div>
+                            <div class="empty-text">该文档暂无条文数据</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to load articles:', error);
+                articlesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-title">加载失败</div>
+                        <div class="empty-text">请检查网络连接后重试</div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayArticles(articles) {
+            const articlesList = document.getElementById('articlesList');
+
+            articlesList.innerHTML = articles.map((article, index) => {
+                const articleId = article.Metadata?.article_id || `第${index + 1}条`;
+
+                return `
+                    <div class="article-card" onclick="toggleArticle(this)">
+                        <span class="article-number">${articleId}</span>
+                        <div class="article-content">${article.Content}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleArticle(element) {
+            element.classList.toggle('expanded');
+        }
+
+        function showListView() {
+            document.getElementById('listView').style.display = 'block';
+            document.getElementById('detailView').style.display = 'none';
+            currentDoc = null;
+        }
+
+        function showEmptyState() {
+            const grid = document.getElementById('documentsGrid');
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-icon">📚</div>
+                    <div class="empty-title">暂无法律文档</div>
+                    <div class="empty-text">请先上传法律文档到知识库</div>
+                </div>
+            `;
+        }
+
+        function showError() {
+            const grid = document.getElementById('documentsGrid');
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-icon">⚠️</div>
+                    <div class="empty-title">加载失败</div>
+                    <div class="empty-text">请检查网络连接后刷新页面</div>
+                </div>
+            `;
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allDocuments.filter(doc =>
+                doc.doc_name.toLowerCase().includes(query)
+            );
+            displayDocuments(filtered);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        async function init() {
+            await loadProjects();
+            await loadDocuments();
+        }
+
+        init();
+    </script>
+</body>
+</html>

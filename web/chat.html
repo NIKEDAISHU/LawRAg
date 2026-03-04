@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能对话 - Law Enforcement Brain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/claude-style.css">
+    <style>
+        .container { max-width: 1280px; margin: 0 auto; padding: 48px 24px; }
+        .header { margin-bottom: 48px; }
+        .header-title { font-family: var(--claude-font-serif); font-size: 38px; font-weight: 700; color: var(--claude-text-primary); margin-bottom: 8px; }
+        .header-subtitle { font-family: var(--claude-font-serif); font-size: 16px; color: var(--claude-text-secondary); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20,20,19,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { background: var(--claude-bg-card); border-radius: var(--claude-radius-xl); padding: 40px; max-width: 540px; }
+        .modal-title { font-family: var(--claude-font-serif); font-size: 24px; font-weight: 700; margin-bottom: 28px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .form-hint { font-size: 13px; color: var(--claude-text-tertiary); }
+        .form-warning { font-size: 12px; color: var(--claude-warning); }
+        .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+        .project-selector-wrapper { display: flex; align-items: center; }
+        .project-selector { width: 280px; height: 44px; padding: 0 16px; border: 1px solid var(--claude-border); border-radius: var(--claude-radius-md); }
+        .chat-layout { display: flex; gap: 24px; height: calc(100vh - 180px); }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: var(--claude-bg-card); border: 1px solid var(--claude-border); border-radius: var(--claude-radius-lg); overflow: hidden; }
+        .chat-header { padding: 20px 24px; border-bottom: 1px solid var(--claude-border); background: var(--claude-bg-primary); }
+        .chat-header h2 { font-family: var(--claude-font-serif); font-size: 20px; font-weight: 600; margin: 0; color: var(--claude-text-primary); }
+        .messages-container { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        .message { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { flex-direction: row-reverse; }
+        .message-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .message.assistant .message-avatar { background: var(--claude-accent-light); background-image: url('logo.png'); background-size: 90%; background-position: center; background-repeat: no-repeat; }
+        .message.user .message-avatar { background: var(--claude-blue-light); }
+        .message-content { flex: 1; max-width: 70%; }
+        .message-bubble { padding: 14px 18px; border-radius: 12px; font-family: var(--claude-font-serif); font-size: 15px; line-height: 1.7; }
+        .message.assistant .message-bubble { background: var(--claude-bg-primary); color: var(--claude-text-primary); border: 1px solid var(--claude-border); }
+        .message.user .message-bubble { background: var(--claude-accent-light); color: var(--claude-accent-dark); }
+        .input-area { padding: 20px 24px; border-top: 1px solid var(--claude-border); background: var(--claude-bg-primary); }
+        .input-wrapper { display: flex; gap: 12px; align-items: flex-end; }
+        .chat-input { flex: 1; min-height: 48px; max-height: 150px; padding: 12px 16px; border: 1px solid var(--claude-border); border-radius: var(--claude-radius-lg); font-family: var(--claude-font-serif); font-size: 15px; resize: none; transition: all 0.2s ease; }
+        .chat-input:focus { outline: none; border-color: var(--claude-accent); box-shadow: 0 0 0 4px var(--claude-accent-light); }
+        .send-btn { width: 48px; height: 48px; border-radius: var(--claude-radius-md); background: var(--claude-accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s ease; }
+        .send-btn:hover:not(:disabled) { background: var(--claude-accent-hover); transform: scale(1.05); }
+        .send-btn:disabled { background: var(--claude-border); cursor: not-allowed; transform: none; }
+        .sidebar { width: 350px; background: var(--claude-bg-card); border: 1px solid var(--claude-border); border-radius: var(--claude-radius-lg); padding: 20px; overflow-y: auto; }
+        .sidebar-title { font-family: var(--claude-font-serif); font-size: 18px; font-weight: 600; color: var(--claude-text-primary); margin-bottom: 16px; }
+        .resource-card { background: var(--claude-bg-primary); border: 1px solid var(--claude-border); padding: 14px; border-radius: var(--claude-radius-md); margin-bottom: 12px; }
+        .resource-title { font-family: var(--claude-font-serif); font-size: 14px; font-weight: 600; color: var(--claude-text-primary); margin-bottom: 8px; }
+        .resource-content { font-family: var(--claude-font-serif); font-size: 13px; color: var(--claude-text-secondary); line-height: 1.6; max-height: 100px; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Claude 风格导航 -->
+        <nav class="claude-nav">
+            <a href="/web/index.html" class="claude-nav-item ">
+                <span>🏠</span>
+                <span>主页</span>
+            </a>
+            <a href="/web/knowledge-modern.html" class="claude-nav-item ">
+                <span>📚</span>
+                <span>知识库</span>
+            </a>
+            <a href="/web/projects.html" class="claude-nav-item ">
+                <span>⚙️</span>
+                <span>项目管理</span>
+            </a>
+            <a href="/web/chat.html" class="claude-nav-item active">
+                <span>💬</span>
+                <span>LLM 对话</span>
+            </a>
+        </nav>
+        <div class="chat-layout">
+            <div class="chat-main">
+                <div class="chat-header">
+                    <h2>💬 智能对话</h2>
+                </div>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message assistant">
+                        <div class="message-avatar"></div>
+                        <div class="message-content">
+                            <div class="message-bubble">您好！我是法律助手，有什么可以帮助您的吗？</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea class="chat-input" id="chatInput" placeholder="输入您的问题..." rows="1"></textarea>
+                        <button class="send-btn" id="sendBtn" disabled>➤</button>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="sidebar-title">📚 相关资料</div>
+                <div id="resourcesContainer">
+                    <div style="text-align: center; padding: 40px 20px; color: var(--claude-text-tertiary);">暂无相关资料</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        marked.setOptions({ breaks: true, gfm: true });
+        const API_BASE = window.location.protocol + '//' + window.location.hostname + ':' + (window.location.port || '8888');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const resourcesContainer = document.getElementById('resourcesContainer');
+
+        chatInput.addEventListener('input', () => { sendBtn.disabled = !chatInput.value.trim(); });
+        chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        sendBtn.addEventListener('click', sendMessage);
+
+        async function sendMessage() {
+            const query = chatInput.value.trim();
+            if (!query) return;
+            addMessage('user', query);
+            chatInput.value = '';
+            sendBtn.disabled = true;
+            const loadingId = addMessage('assistant', '正在思考...');
+
+            try {
+                const response = await fetch(API_BASE + '/api/v1/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                const data = await response.json();
+                const loadingMsg = document.querySelector('[data-id="' + loadingId + '"]');
+                if (loadingMsg) loadingMsg.remove();
+
+                if (data.success) {
+                    addMessage('assistant', data.data.answer, true);
+                    if (data.data.sources) displaySources(data.data.sources);
+                } else {
+                    addMessage('assistant', '抱歉：' + data.message);
+                }
+            } catch (error) {
+                const loadingMsg = document.querySelector('[data-id="' + loadingId + '"]');
+                if (loadingMsg) loadingMsg.remove();
+                addMessage('assistant', '抱歉，发生了错误：' + error.message);
+            }
+        }
+
+        function addMessage(role, content, markdown) {
+            const id = 'msg-' + Date.now();
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + role;
+            messageDiv.dataset.id = id;
+            const avatar = role === 'assistant' ? '' : '👤';
+            const displayContent = markdown && marked ? marked.parse(content) : content;
+            messageDiv.innerHTML = '<div class="message-avatar">' + avatar + '</div><div class="message-content"><div class="message-bubble">' + displayContent + '</div></div>';
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return id;
+        }
+
+        function displaySources(sources) {
+            if (!sources || sources.length === 0) return;
+            resourcesContainer.innerHTML = sources.map(source => '<div class="resource-card"><div class="resource-title">' + (source.metadata?.law_name || source.metadata?.filename || '未知文档') + '</div><div class="resource-content">' + (source.content?.substring(0, 200) || '') + '...</div></div>').join('');
+        }
+    </script>
+</body>
+</html>

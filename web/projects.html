@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目管理 - Law Enforcement Brain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/claude-style.css">
+    <style>
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .project-card {
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            padding: 28px;
+            border-radius: var(--claude-radius-lg);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--project-accent, var(--claude-accent));
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .project-card:hover {
+            border-color: var(--claude-accent);
+            transform: translateY(-4px);
+            box-shadow: var(--claude-shadow-md);
+        }
+
+        .project-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .project-title {
+            font-family: var(--claude-font-serif);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .project-code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: var(--claude-text-tertiary);
+            background: var(--claude-bg-primary);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--claude-border);
+            background: var(--claude-bg-card);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background: var(--claude-accent-light);
+            border-color: var(--claude-accent);
+            transform: scale(1.05);
+        }
+
+        .project-description {
+            font-family: var(--claude-font-serif);
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--claude-text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .project-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: var(--claude-text-tertiary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-value {
+            font-size: 14px;
+            color: var(--claude-text-primary);
+            font-weight: 600;
+        }
+
+        .project-stats {
+            display: flex;
+            gap: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--claude-border);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--claude-text-secondary);
+        }
+
+        .stat-icon {
+            font-size: 18px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            font-size: 16px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: var(--claude-success-light);
+            color: var(--claude-success);
+        }
+
+        .status-inactive {
+            background: var(--claude-bg-primary);
+            color: var(--claude-text-tertiary);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 20, 19, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--claude-bg-card);
+            border-radius: var(--claude-radius-xl);
+            padding: 40px;
+            max-width: 640px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--claude-shadow-lg);
+        }
+
+        .modal-title {
+            font-family: var(--claude-font-serif);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: var(--claude-text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--claude-text-primary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--claude-border);
+            background: var(--claude-bg-primary);
+            border-radius: var(--claude-radius-md);
+            font-size: 14px;
+            font-family: var(--claude-font-sans);
+            color: var(--claude-text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--claude-accent);
+            box-shadow: 0 0 0 4px var(--claude-accent-light);
+        }
+
+        .form-hint {
+            font-size: 13px;
+            color: var(--claude-text-tertiary);
+            margin-top: 6px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--claude-border);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--claude-radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--claude-accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--claude-accent-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .btn-secondary {
+            background: var(--claude-bg-primary);
+            color: var(--claude-text-primary);
+            border: 1px solid var(--claude-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--claude-bg-card);
+            border-color: var(--claude-accent);
+        }
+
+        .btn-danger {
+            background: var(--claude-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            background: var(--claude-bg-card);
+            border: 1px solid var(--claude-border);
+            border-radius: var(--claude-radius-xl);
+        }
+
+        .empty-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-family: var(--claude-font-serif);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            font-size: 15px;
+            color: var(--claude-text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--claude-border);
+            border-top-color: var(--claude-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 项目卡片颜色 */
+        .accent-warm { --project-accent: #D97757; }
+        .accent-blue { --project-accent: #3B82F6; }
+        .accent-purple { --project-accent: #8B5CF6; }
+        .accent-green { --project-accent: #10B981; }
+        .accent-amber { --project-accent: #F59E0B; }
+    
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .claude-page-header {
+            margin-bottom: 48px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .header-text {
+            flex: 1;
+        }
+
+        .claude-title {
+            font-family: var(--claude-font-serif);
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--claude-text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .claude-subtitle {
+            font-family: var(--claude-font-serif);
+            font-size: 16px;
+            color: var(--claude-text-secondary);
+            font-weight: 400;
+        }
+
+        .claude-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            background: var(--claude-accent);
+            color: white;
+            border: none;
+            border-radius: var(--claude-radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--claude-shadow-sm);
+        }
+
+        .claude-button:hover {
+            background: var(--claude-accent-hover);
+            box-shadow: var(--claude-shadow-md);
+            transform: translateY(-1px);
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+</style>
+</head>
+<body>
+    <div class="container">        <!-- Claude 风格导航 -->
+        <nav class="claude-nav">
+            <a href="/web/index.html" class="claude-nav-item ">
+                <span>🏠</span>
+                <span>主页</span>
+            </a>
+            <a href="/web/knowledge-modern.html" class="claude-nav-item ">
+                <span>📚</span>
+                <span>知识库</span>
+            </a>
+            <a href="/web/projects.html" class="claude-nav-item active">
+                <span>⚙️</span>
+                <span>项目管理</span>
+            </a>
+            <a href="/web/chat.html" class="claude-nav-item ">
+                <span>💬</span>
+                <span>LLM 对话</span>
+            </a>
+        </nav>
+
+        <!-- 页面头部 -->
+        <header class="claude-page-header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="claude-title">项目管理</h1>
+                    <p class="claude-subtitle">创建和管理多个 RAG 项目</p>
+                </div>
+                <button class="claude-button" onclick="openCreateModal()">
+                    ➕ 创建新项目
+                </button>
+            </div>
+        </header>
+
+        <!-- 项目列表 -->
+        <div id="projectsContainer">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p style="color: var(--claude-text-secondary);">加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建/编辑项目模态框 -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modalTitle">创建新项目</h2>
+            <form id="projectForm">
+                <div class="form-group">
+                    <label class="form-label">项目代码 *</label>
+                    <input type="text" class="form-input" id="projectCode" required>
+                    <p class="form-hint">唯一标识符，只能包含字母、数字和下划线</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">项目名称 *</label>
+                    <input type="text" class="form-input" id="projectName" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">项目类型</label>
+                    <select class="form-select" id="projectType">
+                        <option value="general">通用</option>
+                        <option value="law_enforcement">执法案卷</option>
+                        <option value="contract">合同审查</option>
+                        <option value="policy">政策文件</option>
+                        <option value="medical">医疗文档</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">项目描述</label>
+                    <textarea class="form-textarea" id="projectDesc" placeholder="简要描述项目用途..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Embedding 模型</label>
+                    <select class="form-select" id="embeddingModel">
+                        <option value="bge-m3">bge-m3 (推荐)</option>
+                        <option value="text-embedding-3-small">text-embedding-3-small</option>
+                        <option value="text-embedding-3-large">text-embedding-3-large</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">向量维度</label>
+                    <select class="form-select" id="vectorDim">
+                        <option value="1024">1024 (bge-m3)</option>
+                        <option value="1536">1536 (OpenAI small)</option>
+                        <option value="3072">3072 (OpenAI large)</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ���除确认模态框 -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <h2 class="modal-title">确认删除</h2>
+            <p style="margin-bottom: 32px; color: var(--claude-text-secondary); line-height: 1.7;">
+                确定要删除项目 "<span id="deleteProjectName" style="font-weight: 600; color: var(--claude-text-primary);"></span>" 吗？<br>
+                <strong style="color: var(--claude-danger);">此操作将删除该项目的所有数据，且无法恢复！</strong>
+            </p>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = `${window.location.protocol}//${window.location.hostname}:${window.location.port || '8888'}`;
+        let allProjects = [];
+        let editingProjectId = null;
+        let deletingProjectId = null;
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/statistics`);
+                const data = await response.json();
+
+                if (data.success && data.data.projects) {
+                    allProjects = data.data.projects;
+                    displayProjects();
+                } else {
+                    showEmpty();
+                }
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+                showError();
+            }
+        }
+
+        function displayProjects() {
+            const container = document.getElementById('projectsContainer');
+
+            if (allProjects.length === 0) {
+                showEmpty();
+                return;
+            }
+
+            const accents = ['accent-warm', 'accent-blue', 'accent-purple', 'accent-green', 'accent-amber'];
+
+            container.innerHTML = `<div class="projects-grid">${allProjects.map((project, index) => `
+                <div class="project-card ${accents[index % accents.length]}">
+                    <div class="project-header">
+                        <div>
+                            <div class="project-title">${project.project_name}</div>
+                            <div class="project-code">${project.project_code}</div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="icon-button" onclick="editProject(${project.id})" title="编辑">✏️</button>
+                            <button class="icon-button" onclick="deleteProject(${project.id}, '${project.project_name}')" title="删除">🗑️</button>
+                        </div>
+                    </div>
+
+                    ${project.description ? `<div class="project-description">${project.description}</div>` : ''}
+
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Embedding 模型</span>
+                            <span class="meta-value">${project.embedding_model}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">向量维度</span>
+                            <span class="meta-value">${project.vector_dim}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">项目类型</span>
+                            <span class="meta-value">${project.project_type}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">状态</span>
+                            <span class="status-badge ${project.is_active ? 'status-active' : 'status-inactive'}">
+                                ${project.is_active ? '活跃' : '已停用'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="project-stats">
+                        <div class="stat-item">
+                            <span class="stat-icon">📄</span>
+                            <span><span class="stat-value">${project.total_documents || 0}</span> 文档</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-icon">📝</span>
+                            <span><span class="stat-value">${project.total_chunks || 0}</span> 条文</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        }
+
+        function showEmpty() {
+            const container = document.getElementById('projectsContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📁</div>
+                    <div class="empty-title">暂无项目</div>
+                    <div class="empty-text">点击上方按钮创建第一个 RAG 项目</div>
+                    <button class="claude-button" onclick="openCreateModal()">创建新项目</button>
+                </div>
+            `;
+        }
+
+        function showError() {
+            const container = document.getElementById('projectsContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <div class="empty-title">加载失败</div>
+                    <div class="empty-text">请检查网络连接后刷新页面</div>
+                </div>
+            `;
+        }
+
+        function openCreateModal() {
+            editingProjectId = null;
+            document.getElementById('modalTitle').textContent = '创建新项目';
+            document.getElementById('projectForm').reset();
+            document.getElementById('projectModal').classList.add('show');
+        }
+
+        async function editProject(id) {
+            editingProjectId = id;
+            document.getElementById('modalTitle').textContent = '编辑项目';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${id}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const project = data.data;
+                    document.getElementById('projectCode').value = project.project_code;
+                    document.getElementById('projectName').value = project.project_name;
+                    document.getElementById('projectType').value = project.project_type;
+                    document.getElementById('projectDesc').value = project.description || '';
+                    document.getElementById('embeddingModel').value = project.embedding_model;
+                    document.getElementById('vectorDim').value = project.vector_dim;
+
+                    document.getElementById('projectModal').classList.add('show');
+                }
+            } catch (error) {
+                alert('加载项目信息失败');
+            }
+        }
+
+        function deleteProject(id, name) {
+            deletingProjectId = id;
+            document.getElementById('deleteProjectName').textContent = name;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        async function confirmDelete() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${deletingProjectId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ 项目删除成功');
+                    closeDeleteModal();
+                    loadProjects();
+                } else {
+                    alert(`❌ 删除失败: ${data.message}`);
+                }
+            } catch (error) {
+                alert(`❌ 删除失败: ${error.message}`);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('projectModal').classList.remove('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const projectData = {
+                project_code: document.getElementById('projectCode').value,
+                project_name: document.getElementById('projectName').value,
+                project_type: document.getElementById('projectType').value,
+                description: document.getElementById('projectDesc').value,
+                embedding_model: document.getElementById('embeddingModel').value,
+                vector_dim: parseInt(document.getElementById('vectorDim').value)
+            };
+
+            try {
+                let response;
+                if (editingProjectId) {
+                    response = await fetch(`${API_BASE}/api/v1/projects/${editingProjectId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                } else {
+                    response = await fetch(`${API_BASE}/api/v1/projects`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ ${editingProjectId ? '项目更新成功' : '项目创建成功'}`);
+                    closeModal();
+                    loadProjects();
+                } else {
+                    alert(`❌ 操作失败: ${data.message}`);
+                }
+            } catch (error) {
+                alert(`❌ 操作失败: ${error.message}`);
+            }
+        });
+
+        loadProjects();
+    </script>
+</body>
+</html>
