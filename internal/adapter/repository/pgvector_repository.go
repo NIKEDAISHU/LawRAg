@@ -144,6 +144,8 @@ func (r *PgVectorRepository) StoreWithQA(ctx context.Context, projectID int64, c
 }
 
 func (r *PgVectorRepository) SearchSimilar(ctx context.Context, projectIDs []int64, queryVector string, topK int) ([]domain.LawChunk, error) {
+	startTime := time.Now()
+
 	var chunks []KnowledgeChunk
 
 	query := r.db.WithContext(ctx)
@@ -160,10 +162,17 @@ func (r *PgVectorRepository) SearchSimilar(ctx context.Context, projectIDs []int
 		return nil, fmt.Errorf("failed to search similar: %w", err)
 	}
 
+	logger.Log.Info("Vector search completed",
+		zap.Int("results", len(chunks)),
+		zap.Int("topK", topK),
+		zap.Duration("cost", time.Since(startTime)))
+
 	return r.convertToDomainChunks(chunks), nil
 }
 
 func (r *PgVectorRepository) SearchByKeywords(ctx context.Context, projectIDs []int64, keywords []string) ([]domain.LawChunk, error) {
+	startTime := time.Now()
+
 	var chunks []KnowledgeChunk
 
 	query := r.db.WithContext(ctx)
@@ -180,10 +189,17 @@ func (r *PgVectorRepository) SearchByKeywords(ctx context.Context, projectIDs []
 		return nil, fmt.Errorf("failed to search by keywords: %w", err)
 	}
 
+	logger.Log.Info("Keyword search completed",
+		zap.Int("results", len(chunks)),
+		zap.Strings("keywords", keywords),
+		zap.Duration("cost", time.Since(startTime)))
+
 	return r.convertToDomainChunks(chunks), nil
 }
 
 func (r *PgVectorRepository) HybridSearch(ctx context.Context, projectIDs []int64, queryVector string, keywords []string, topK int) ([]domain.LawChunk, error) {
+	startTime := time.Now()
+
 	// 安全验证：确保 queryVector 是有效的向量字符串格式
 	if queryVector == "" {
 		return nil, errors.New("query vector cannot be empty")
@@ -251,6 +267,11 @@ func (r *PgVectorRepository) HybridSearch(ctx context.Context, projectIDs []int6
 	// 使用 RRF (Reciprocal Rank Fusion) 合并结果
 	const rrfK = 60
 	results := r.rrfMerge(vectorResults, keywordResults, rrfK, topK)
+
+	logger.Log.Info("Hybrid search completed",
+		zap.Int("results", len(results)),
+		zap.Strings("keywords", cleanedKeywords),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return results, nil
 }

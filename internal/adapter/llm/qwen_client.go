@@ -29,11 +29,12 @@ type QwenClient struct {
 }
 
 func NewQwenClient(cfg *config.LLMConfig) port.LLMClient {
+	baseURL, apiKey, model := cfg.GetActiveLLMConfig()
 	return &QwenClient{
-		httpClient:      &http.Client{Timeout: 120 * time.Second},
-		baseURL:         "https://dashscope.aliyuncs.com/compatible-mode/v1",
-		apiKey:          cfg.QwenAPIKey,
-		model:           cfg.QwenModel,
+		httpClient:      &http.Client{Timeout: 300 * time.Second}, // 5 分钟超时
+		baseURL:         baseURL,
+		apiKey:          apiKey,
+		model:           model,
 		embeddingURL:    cfg.OllamaBaseURL,
 		embeddingKey:    cfg.APIKey,
 		embeddingModel:  cfg.EmbeddingModel,

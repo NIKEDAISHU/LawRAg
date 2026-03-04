@@ -54,6 +54,28 @@ type LLMConfig struct {
 	QwenModel  string // 千问模型名称，如 qwen2.5-plus
 }
 
+// LLM Provider 常量
+const (
+	ProviderOpenAI  = "openai"
+	ProviderMiniMax = "minimax"
+	ProviderQwen    = "qwen"
+	ProviderHybrid  = "hybrid"
+)
+
+// GetActiveLLMConfig 获取当前 Provider 对应的有效配置
+func (c *LLMConfig) GetActiveLLMConfig() (baseURL, apiKey, model string) {
+	switch c.Provider {
+	case ProviderMiniMax:
+		return "https://api.minimaxi.com/anthropic", c.APIKey, c.Model
+	case ProviderQwen:
+		return "https://dashscope.aliyuncs.com/compatible-mode/v1", c.QwenAPIKey, c.QwenModel
+	case ProviderHybrid:
+		return c.BaseURL, c.APIKey, c.Model
+	default:
+		return c.BaseURL, c.APIKey, c.Model
+	}
+}
+
 type ReviewConfig struct {
 	CheckStrictness string
 	FallbackMode    bool

@@ -45,29 +45,38 @@ func main() {
 	logger.Log.Info("Project repository initialized")
 
 	var llmClient port.LLMClient
+
+	// 获取当前 Provider 的配置
+	baseURL, _, model := cfg.LLM.GetActiveLLMConfig()
+
 	// 根据 Provider 选择不同的 LLM 客户端
 	switch cfg.LLM.Provider {
 	case "minimax":
 		llmClient = llm.NewMiniMaxClient(&cfg.LLM)
-		logger.Log.Info("MiniMax LLM client initialized",
-			zap.String("base_url", "https://api.minimaxi.com/anthropic"),
-			zap.String("model", cfg.LLM.Model))
+		logger.Log.Info("LLM client initialized",
+			zap.String("provider", "minimax"),
+			zap.String("base_url", baseURL),
+			zap.String("model", model))
 	case "qwen":
 		llmClient = llm.NewQwenClient(&cfg.LLM)
-		logger.Log.Info("Qwen LLM client initialized",
-			zap.String("base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-			zap.String("model", cfg.LLM.QwenModel))
+		logger.Log.Info("LLM client initialized",
+			zap.String("provider", "qwen"),
+			zap.String("base_url", baseURL),
+			zap.String("model", model))
 	case "hybrid":
 		llmClient = llm.NewHybridClient(&cfg.LLM)
-		logger.Log.Info("Hybrid LLM client initialized",
-			zap.String("chat_url", cfg.LLM.BaseURL),
-			zap.String("chat_model", cfg.LLM.Model),
+		logger.Log.Info("LLM client initialized",
+			zap.String("provider", "hybrid"),
+			zap.String("chat_url", baseURL),
+			zap.String("chat_model", model),
 			zap.String("embedding_url", cfg.LLM.OllamaBaseURL),
 			zap.String("embedding_model", cfg.LLM.EmbeddingModel))
 	default:
 		llmClient = llm.NewOpenAIClient(&cfg.LLM)
-		logger.Log.Info("OpenAI LLM client initialized",
-			zap.String("base_url", cfg.LLM.BaseURL))
+		logger.Log.Info("LLM client initialized",
+			zap.String("provider", "openai"),
+			zap.String("base_url", baseURL),
+			zap.String("model", model))
 	}
 
 	projectService := service.NewProjectService(projectRepo)

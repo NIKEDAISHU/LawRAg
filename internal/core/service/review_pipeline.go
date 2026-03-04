@@ -8,6 +8,7 @@ import (
 	"law-enforcement-brain/internal/core/port"
 	"law-enforcement-brain/pkg/logger"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -30,6 +31,8 @@ func (s *ExtractInfoStep) Skip(ctx context.Context, state *port.ReviewState) boo
 }
 
 func (s *ExtractInfoStep) Execute(ctx context.Context, state *port.ReviewState) error {
+	startTime := time.Now()
+
 	logger.Log.Info("Executing ExtractInfo step",
 		zap.String("case_content_length", fmt.Sprintf("%d", len(state.CaseContent))))
 
@@ -44,9 +47,10 @@ func (s *ExtractInfoStep) Execute(ctx context.Context, state *port.ReviewState) 
 	}
 
 	state.ExtractedInfo = &extractedInfo
-	logger.Log.Info("Extracted key information",
+	logger.Log.Info("ExtractInfo step completed",
 		zap.String("violation_facts", extractedInfo.ViolationFacts),
-		zap.Strings("cited_laws", extractedInfo.CitedLaws))
+		zap.Strings("cited_laws", extractedInfo.CitedLaws),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }
@@ -69,6 +73,8 @@ func (s *RetrieveLawsStep) Skip(ctx context.Context, state *port.ReviewState) bo
 }
 
 func (s *RetrieveLawsStep) Execute(ctx context.Context, state *port.ReviewState) error {
+	startTime := time.Now()
+
 	logger.Log.Info("Executing RetrieveLaws step",
 		zap.String("strategy", s.strategy.Name()))
 
@@ -94,8 +100,9 @@ func (s *RetrieveLawsStep) Execute(ctx context.Context, state *port.ReviewState)
 
 	state.RetrievedLaws = builder.String()
 
-	logger.Log.Info("Retrieved relevant laws",
-		zap.Int("chunk_count", len(chunks)))
+	logger.Log.Info("RetrieveLaws step completed",
+		zap.Int("chunk_count", len(chunks)),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }
@@ -119,6 +126,8 @@ func (s *ValidateLawsStep) Skip(ctx context.Context, state *port.ReviewState) bo
 }
 
 func (s *ValidateLawsStep) Execute(ctx context.Context, state *port.ReviewState) error {
+	startTime := time.Now()
+
 	var facts, citedLaws string
 
 	if state.ExtractedInfo != nil {
@@ -143,9 +152,10 @@ func (s *ValidateLawsStep) Execute(ctx context.Context, state *port.ReviewState)
 
 	state.ValidationResult = &validationResult
 
-	logger.Log.Info("Validation completed",
+	logger.Log.Info("ValidateLaws step completed",
 		zap.Bool("is_correct", validationResult.IsCorrect),
-		zap.Int("risk_score", validationResult.RiskScore))
+		zap.Int("risk_score", validationResult.RiskScore),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }
@@ -168,6 +178,8 @@ func (s *VerifyCitationsStep) Skip(ctx context.Context, state *port.ReviewState)
 }
 
 func (s *VerifyCitationsStep) Execute(ctx context.Context, state *port.ReviewState) error {
+	startTime := time.Now()
+
 	s.verifier.VerifyCitationsFromState(ctx, state)
 
 	// 统计验证结果
@@ -182,9 +194,10 @@ func (s *VerifyCitationsStep) Execute(ctx context.Context, state *port.ReviewSta
 		}
 	}
 
-	logger.Log.Info("Citation verification completed",
+	logger.Log.Info("VerifyCitations step completed",
 		zap.Int("verified", verifiedCount),
-		zap.Int("total", totalCount))
+		zap.Int("total", totalCount),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }
@@ -205,6 +218,8 @@ func (s *AssembleResultStep) Skip(ctx context.Context, state *port.ReviewState) 
 }
 
 func (s *AssembleResultStep) Execute(ctx context.Context, state *port.ReviewState) error {
+	startTime := time.Now()
+
 	validation := state.ValidationResult
 
 	overallResult := "pass"
@@ -225,10 +240,11 @@ func (s *AssembleResultStep) Execute(ctx context.Context, state *port.ReviewStat
 		Issues:        validation.Issues,
 	}
 
-	logger.Log.Info("Result assembled",
+	logger.Log.Info("AssembleResult step completed",
 		zap.String("overall_result", overallResult),
 		zap.Int("risk_score", validation.RiskScore),
-		zap.Int("issue_count", len(validation.Issues)))
+		zap.Int("issue_count", len(validation.Issues)),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }

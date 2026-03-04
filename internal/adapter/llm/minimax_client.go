@@ -29,11 +29,12 @@ type MiniMaxClient struct {
 }
 
 func NewMiniMaxClient(cfg *config.LLMConfig) port.LLMClient {
+	baseURL, apiKey, model := cfg.GetActiveLLMConfig()
 	return &MiniMaxClient{
-		httpClient:       &http.Client{Timeout: 120 * time.Second},
-		baseURL:         "https://api.minimaxi.com/anthropic",
-		apiKey:          cfg.APIKey,
-		model:           cfg.Model,
+		httpClient:       &http.Client{Timeout: 300 * time.Second}, // 5 分钟超时
+		baseURL:         baseURL,
+		apiKey:          apiKey,
+		model:           model,
 		embeddingURL:    cfg.OllamaBaseURL,
 		embeddingKey:    cfg.APIKey,
 		embeddingModel:  cfg.EmbeddingModel,

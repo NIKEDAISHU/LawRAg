@@ -60,6 +60,7 @@ type SourceDocument struct {
 }
 
 func (h *ChatHandler) Chat(c *gin.Context) {
+	startTime := time.Now()
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Log.Error("Failed to bind chat request", zap.Error(err))
@@ -76,6 +77,8 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
+	// 创建查询向量
+	queryVectorStart := time.Now()
 	queryVector, err := h.llmClient.CreateEmbedding(ctx, req.Query)
 	if err != nil {
 		logger.Log.Error("Failed to create embedding", zap.Error(err))
@@ -85,6 +88,7 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		})
 		return
 	}
+	logger.Log.Info("Query embedding created", zap.Duration("cost", time.Since(queryVectorStart)))
 
 	vectorStr := utils.FormatVector(queryVector)
 	keywords := utils.ExtractKeywords(req.Query, 2)
@@ -94,6 +98,8 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		projectIDs = []int64{req.ProjectID}
 	}
 
+	// 混合搜索
+	searchStart := time.Now()
 	chunks, err := h.lawRepo.HybridSearch(ctx, projectIDs, vectorStr, keywords, req.TopK)
 	if err != nil {
 		logger.Log.Error("Failed to search knowledge base", zap.Error(err))
@@ -103,6 +109,7 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		})
 		return
 	}
+	logger.Log.Info("Knowledge base searched", zap.Duration("cost", time.Since(searchStart)), zap.Int("chunks_found", len(chunks)))
 
 	var contextBuilder strings.Builder
 	sources := make([]SourceDocument, 0, len(chunks))
@@ -161,6 +168,16 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		Content: userPrompt,
 	})
 
+	// 打印完整的 prompt 信息
+	logger.Log.Info("LLM prompt details",
+		zap.Int("system_prompt_len", len(systemPrompt)),
+		zap.Int("user_prompt_len", len(userPrompt)),
+		zap.Int("context_len", len(contextBuilder.String())),
+		zap.Int("sources_count", len(sources)),
+		zap.String("user_prompt_preview", userPrompt[:min(200, len(userPrompt))]))
+
+	// LLM 生成回答
+	llmStart := time.Now()
 	answer, err := h.llmClient.ChatWithHistory(ctx, messages)
 	if err != nil {
 		logger.Log.Error("Failed to generate answer", zap.Error(err))
@@ -170,11 +187,13 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		})
 		return
 	}
+	logger.Log.Info("LLM answer generated", zap.Duration("cost", time.Since(llmStart)))
 
 	logger.Log.Info("Chat completed",
 		zap.String("query", req.Query),
 		zap.Int("sources_count", len(sources)),
-		zap.Int("answer_length", len(answer)))
+		zap.Int("answer_length", len(answer)),
+		zap.Duration("total_cost", time.Since(startTime)))
 
 	c.JSON(http.StatusOK, ChatResponse{
 		Success: true,

@@ -45,6 +45,8 @@ func (h *ReviewHandler) Close() {
 }
 
 func (h *ReviewHandler) ReviewCase(c *gin.Context) {
+	startTime := time.Now()
+
 	var req domain.ReviewRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -68,6 +70,10 @@ func (h *ReviewHandler) ReviewCase(c *gin.Context) {
 		})
 		return
 	}
+
+	logger.Log.Info("ReviewCase completed",
+		zap.String("request_id", req.RequestID),
+		zap.Duration("cost", time.Since(startTime)))
 
 	c.JSON(http.StatusOK, domain.ReviewResponse{
 		Code: http.StatusOK,
@@ -126,6 +132,8 @@ type RetrieverResource struct {
 
 // DifyChatCompletion Dify 兼容的评审接口
 func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
+	startTime := time.Now()
+
 	var req DifyChatRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -166,6 +174,7 @@ func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
 	// Step 1: 生成查询向量
 	// 如果 embedding 服务不可用，降级为纯关键词检索
 	var chunks []domain.LawChunk
+	embeddingStart := time.Now()
 	queryVector, err := h.llmClient.CreateEmbedding(ctx, normalizedQuery)
 	if err != nil {
 		logger.Log.Warn("Failed to create query embedding, fallback to keyword-only search", zap.Error(err))
@@ -181,6 +190,8 @@ func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
 			return
 		}
 	} else {
+		logger.Log.Info("Query embedding created", zap.Duration("cost", time.Since(embeddingStart)))
+
 		// 使用优化的向量格式转换
 		vectorStr := utils.FormatVectorWithoutCache(queryVector)
 
@@ -190,6 +201,7 @@ func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
 			zap.String("vector_preview", vectorStr[:min(100, len(vectorStr))]))
 
 		// Step 3: 混合检索（向量 + 全文）使用提取的关键词
+		searchStart := time.Now()
 		defaultProjectIDs := []int64{domain.DefaultProjectID}
 		chunks, err = h.lawRepo.HybridSearch(ctx, defaultProjectIDs, vectorStr, keywords, 5)
 		if err != nil {
@@ -199,6 +211,7 @@ func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
 			})
 			return
 		}
+		logger.Log.Info("Knowledge base searched", zap.Duration("cost", time.Since(searchStart)), zap.Int("chunks_found", len(chunks)))
 	}
 
 	// 构建上下文
@@ -264,10 +277,11 @@ func (h *ReviewHandler) DifyChatCompletion(c *gin.Context) {
 
 	// 记录日志
 	promptLen := len(userPrompt) + len(systemPrompt)
-	logger.Log.Info("Chat completed",
+	logger.Log.Info("DifyChatCompletion completed",
 		zap.String("rule_id", ruleID),
 		zap.Int("prompt_len", promptLen),
-		zap.Int("answer_length", len(answer)))
+		zap.Int("answer_length", len(answer)),
+		zap.Duration("total_cost", time.Since(startTime)))
 
 	// 构建 Dify 兼容的响应
 	taskID := fmt.Sprintf("task_%d", time.Now().UnixNano())

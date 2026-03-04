@@ -24,7 +24,8 @@
       "Bash(ls -lh c:/work/GO/CaseReviewRAG/bin/*.exe c:/work/GO/CaseReviewRAG/dist/law-enforcement-brain)",
       "Bash(go build ./cmd/api/...)",
       "Bash(go run main.go)",
-      "Bash(go build -o bin/CaseReviewRAG.exe ./cmd/api/)"
+      "Bash(go build -o bin/CaseReviewRAG.exe ./cmd/api/)",
+      "Bash(go build -o /dev/null ./cmd/api/)"
     ]
   }
 }

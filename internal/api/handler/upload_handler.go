@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -47,6 +48,8 @@ type UploadResponse struct {
 
 // UploadLawDocument 上传法律文档并生成向量
 func (h *UploadHandler) UploadLawDocument(c *gin.Context) {
+	startTime := time.Now()
+
 	// 获取项目ID参数
 	projectIDStr := c.PostForm("project_id")
 	if projectIDStr == "" {
@@ -108,6 +111,8 @@ func (h *UploadHandler) UploadLawDocument(c *gin.Context) {
 	var chunks []domain.LawChunk
 	contentStr := string(content)
 
+	// 文档切分
+	splitStart := time.Now()
 	// 检测是否为裁量基准格式（包含【违法行为】和 ======）
 	if strings.Contains(contentStr, "【违法行为】") && strings.Contains(contentStr, "======") {
 		chunks = h.discretionSplitter.Split(contentStr)
@@ -127,6 +132,7 @@ func (h *UploadHandler) UploadLawDocument(c *gin.Context) {
 			zap.String("filename", file.Filename),
 			zap.Int("chunks", len(chunks)))
 	}
+	logger.Log.Info("Document split completed", zap.Duration("cost", time.Since(splitStart)))
 
 	// 生成向量并存储
 	ctx := c.Request.Context()
@@ -247,6 +253,7 @@ func (h *UploadHandler) UploadLawDocument(c *gin.Context) {
 	close(resultChan)
 
 	// 按原始顺序排序并存储到数据库
+	storeStart := time.Now()
 	for _, result := range results {
 		err := h.lawRepo.StoreWithQA(ctx, projectID, result.Chunk.Content, result.Embedding, result.QAContent, result.QAVector, result.Metadata)
 		if err != nil {
@@ -257,11 +264,13 @@ func (h *UploadHandler) UploadLawDocument(c *gin.Context) {
 		}
 		successCount++
 	}
+	logger.Log.Info("Chunks stored to database", zap.Duration("cost", time.Since(storeStart)))
 
 	logger.Log.Info("Law document processed",
 		zap.String("filename", file.Filename),
 		zap.Int("total_chunks", len(chunks)),
-		zap.Int("success_count", successCount))
+		zap.Int("success_count", successCount),
+		zap.Duration("total_cost", time.Since(startTime)))
 
 	c.JSON(http.StatusOK, UploadResponse{
 		Success:      true,

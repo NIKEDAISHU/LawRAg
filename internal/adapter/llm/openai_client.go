@@ -8,10 +8,12 @@ import (
 	"io"
 	"law-enforcement-brain/internal/core/port"
 	"law-enforcement-brain/pkg/config"
+	"law-enforcement-brain/pkg/logger"
 	"text/template"
 	"time"
 
 	openai "github.com/sashabaranov/go-openai"
+	"go.uber.org/zap"
 )
 
 type OpenAIClient struct {
@@ -137,6 +139,8 @@ func (c *OpenAIClient) ValidateLaws(ctx context.Context, facts string, citedLaws
 }
 
 func (c *OpenAIClient) CreateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	startTime := time.Now()
+
 	// 添加超时控制，embedding 通常比较快，30 秒应该足够
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -153,6 +157,11 @@ func (c *OpenAIClient) CreateEmbedding(ctx context.Context, text string) ([]floa
 	if len(resp.Data) == 0 {
 		return nil, fmt.Errorf("no embedding returned")
 	}
+
+	logger.Log.Info("Embedding created",
+		zap.String("model", c.embeddingModel),
+		zap.Int("text_length", len(text)),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return resp.Data[0].Embedding, nil
 }
@@ -172,8 +181,10 @@ func (c *OpenAIClient) Chat(ctx context.Context, systemPrompt string, userPrompt
 }
 
 func (c *OpenAIClient) ChatWithHistory(ctx context.Context, messages []openai.ChatCompletionMessage) (string, error) {
+	startTime := time.Now()
+
 	// 添加超时控制，chat 可能需要更长时间，2 分钟应该足够
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	resp, err := c.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
@@ -193,6 +204,12 @@ func (c *OpenAIClient) ChatWithHistory(ctx context.Context, messages []openai.Ch
 	content := resp.Choices[0].Message.Content
 
 	content = extractJSON(content)
+
+	logger.Log.Info("Chat completion",
+		zap.String("model", c.model),
+		zap.Int("message_count", len(messages)),
+		zap.Int("response_length", len(content)),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return content, nil
 }
@@ -247,6 +264,8 @@ func (c *OpenAIClient) ChatStream(ctx context.Context, systemPrompt string, user
 
 // ChatWithHistoryStream 支持多轮对话的流式聊天
 func (c *OpenAIClient) ChatWithHistoryStream(ctx context.Context, messages []openai.ChatCompletionMessage, callback func(content string) error) error {
+	startTime := time.Now()
+
 	stream, err := c.client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
 		Model:       c.model,
 		Messages:    messages,
@@ -275,6 +294,10 @@ func (c *OpenAIClient) ChatWithHistoryStream(ctx context.Context, messages []ope
 			}
 		}
 	}
+
+	logger.Log.Info("Chat stream completed",
+		zap.String("model", c.model),
+		zap.Duration("cost", time.Since(startTime)))
 
 	return nil
 }
